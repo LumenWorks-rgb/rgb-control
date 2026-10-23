@@ -1,8 +1,12 @@
 # RGB Control
 
-Лёгкая программа для Windows: подсветка вентиляторов, клавиатуры, мыши, видеокарты и оперативной памяти, кривые вентиляторов и помпы, обработка микрофона — в одном окне, без SignalRGB, iCUE и десятка фирменных утилит.
+[English](README.en.md) · **Русский**
+
+Лёгкая программа для Windows: подсветка вентиляторов, клавиатуры, мыши, видеокарты и оперативной памяти, кривые вентиляторов и помпы, обработка микрофона — всё в одном небольшом окне.
 
 **[⬇ Скачать последнюю версию](../../releases/latest)** — файл `RGB Control Setup X.Y.exe`
+
+![RGB Control — главное окно](docs/screenshot-main.png)
 
 ---
 
@@ -13,6 +17,10 @@
 - **Звук** — обработка микрофона как в OBS: шумоподавление, шумовой гейт, эквалайзер, компрессор, лимитер. Обработанный голос можно отдавать в Discord и игры через VB-Audio Virtual Cable.
 - **Подготовка** — при первом запуске программа сама проверяет компьютер по каталогу из ~2500 RGB-устройств и показывает, чем управляет, а что пока не поддерживается.
 - **Не мешает играм** — почти не нагружает компьютер; в трее, автозапуск вместе с Windows.
+
+| Охлаждение | Звук |
+|---|---|
+| ![Охлаждение](docs/screenshot-cooling.png) | ![Звук](docs/screenshot-sound.png) |
 
 ## Поддерживаемое железо
 
@@ -87,4 +95,4 @@
 
 ### English
 
-**RGB Control** is a lightweight Windows app for RGB lighting (fans, keyboard, mouse, GPU, RAM), fan/pump curves and microphone processing — one small tray app instead of SignalRGB, iCUE and vendor utilities. Download the installer from [Releases](../../releases/latest). The interface is in Russian. Found a bug or want your device supported? Use **Settings → «Сообщить о проблеме»** in the app, or open an [issue](../../issues/new/choose) with the compatibility report attached (Settings → «Сохранить отчёт совместимости»).
+**RGB Control** is a lightweight Windows app for RGB lighting (fans, keyboard, mouse, GPU, RAM), fan/pump curves and microphone processing — all in one small tray app. Full English description: [README.en.md](README.en.md). Download the installer from [Releases](../../releases/latest). The interface is in Russian. Found a bug or want your device supported? Use **Settings → «Сообщить о проблеме»** in the app, or open an [issue](../../issues/new/choose) with the compatibility report attached (Settings → «Сохранить отчёт совместимости»).
