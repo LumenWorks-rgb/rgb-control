@@ -1,0 +1,863 @@
+/* Copyright 2023 Finalkey
+ * Copyright 2023 LiWenLiu <https://github.com/Linger7857>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "common/rdmctmzt_common.h"
+
+bool User_Key_Batt_Num_Show = false;
+uint8_t User_Key_Batt_Count = 0;
+bool Test_Led = false;
+uint8_t Test_Colour = 0U;
+
+// Номера светодиодов QK75 (по таблице g_led_config из заводской прошивки Cidoo)
+#define LED_CAP_INDEX       (44)    // Caps Lock
+#define LED_WIN_L_INDEX     (73)    // левый Win
+#define LED_BATT_INDEX      (15)    // '1'
+
+// Индикаторы режимов — на клавишах, которыми режим выбирается (Fn + Q/W/E/R/T)
+#define LED_BLE_1_INDEX     (30)    // Q
+#define LED_BLE_2_INDEX     (31)    // W
+#define LED_BLE_3_INDEX     (32)    // E
+#define LED_2P4G_INDEX      (33)    // R
+#define LED_USB_INDEX       (34)    // T
+
+// Заряд батареи — на цифрах 1..0
+uint8_t Led_Batt_Index_Tab[10] = {
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24
+};
+
+void matrix_io_delay(void) {
+}
+
+void matrix_output_select_delay(void) {
+}
+
+void matrix_output_unselect_delay(uint8_t line, bool key_pressed) {
+}
+
+led_config_t g_led_config = { {
+    {     0,     1,     2,     3,     4,     5,     6,     7,     8,     9,    10,    11,    12,NO_LED,    81,NO_LED },
+    {    14,    15,    16,    17,    18,    19,    20,    21,    22,    23,    24,    25,    26,    27,NO_LED,NO_LED },
+    {    29,    30,    31,    32,    33,    34,    35,    36,    37,    38,    39,    40,    41,    42,    13,    28 },
+    {    44,    45,    46,    47,    48,    49,    50,    51,    52,    53,    54,    55,NO_LED,    56,    43,    57 },
+    {    58,NO_LED,    59,    60,    61,    62,    63,    64,    65,    66,    67,    68,NO_LED,    69,    70,    71 },
+    {    72,    73,    74,NO_LED,NO_LED,    75,NO_LED,NO_LED,NO_LED,    76,    77,NO_LED,NO_LED,    78,    79,    80 }
+}, {
+    {  0, 10}, { 17, 10}, { 32, 10}, { 47, 10}, { 62, 10}, { 79, 10}, { 94, 10}, {109, 10}, {124, 10}, {141, 10},
+    {156, 10}, {171, 10}, {186, 10}, {206, 10}, {  0, 20}, { 15, 20}, { 30, 20}, { 45, 20}, { 60, 20}, { 75, 20},
+    { 90, 20}, {105, 20}, {120, 20}, {135, 20}, {150, 20}, {165, 20}, {180, 20}, {200, 20}, {224, 20}, {  4, 30},
+    { 20, 30}, { 35, 30}, { 50, 30}, { 65, 30}, { 80, 30}, { 95, 30}, {110, 30}, {125, 30}, {140, 30}, {155, 30},
+    {170, 30}, {185, 30}, {204, 30}, {224, 30}, {  6, 40}, { 24, 40}, { 39, 40}, { 54, 40}, { 69, 40}, { 84, 40},
+    { 99, 40}, {114, 40}, {129, 40}, {144, 40}, {159, 40}, {174, 40}, {199, 40}, {224, 40}, {  8, 50}, { 28, 50},
+    { 43, 50}, { 58, 50}, { 73, 50}, { 88, 50}, {103, 50}, {118, 50}, {133, 50}, {148, 50}, {163, 50}, {183, 50},
+    {203, 50}, {224, 50}, {  0, 60}, { 20, 60}, { 40, 60}, { 90, 60}, {145, 60}, {165, 60}, {188, 60}, {203, 60},
+    {224, 60}, {224, 10}
+}, {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 1, 1, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1,
+    1, 1
+} };
+
+void notify_usb_device_state_change_user(struct usb_device_state usb_device_state)  {
+    if (Keyboard_Info.Key_Mode == QMK_USB_MODE) {
+        switch (usb_device_state.configure_state) {
+            case USB_DEVICE_STATE_CONFIGURED:
+                Usb_If_Ok_Led = true;
+                break;
+            case USB_DEVICE_STATE_SUSPEND:
+                // Handle suspend state - keyboard is in low power mode
+                Usb_If_Ok_Led = false;
+                break;
+            case USB_DEVICE_STATE_INIT:
+            case USB_DEVICE_STATE_NO_INIT:
+            default:
+                Usb_If_Ok_Led = false;
+                break;
+        }
+    } else {
+        Usb_If_Ok_Led = false;
+    }
+}
+
+void housekeeping_task_user(void) {
+    User_Keyboard_Reset();
+    es_chibios_user_idle_loop_hook();
+}
+
+void board_init(void) {
+    es_ble_spi_init();          // SPI initialization
+    User_Adc_Init();            // ADC initialization
+    eeprom_driver_init();       // EEPROM initialization
+    rgb_matrix_driver_init();   // PWM DMA initialization
+    Init_Gpio_Infomation();     // GPIO initialization
+    Init_Keyboard_Infomation(); // Keyboard info initialization
+    Init_Batt_Infomation();     // Battery info initialization
+    User_Systime_Init();        // System timer initialization
+
+    if (Keyboard_Info.Key_Mode == QMK_USB_MODE) {
+        User_Usb_Init();
+        Led_Rf_Pair_Flg = false;
+    } else {
+        Usb_Disconnect();
+    }
+
+    Init_Spi_Power_Up = true;
+    Init_Spi_100ms_Delay = 0;
+    Spi_Interval = SPI_DELAY_RF_TIME;
+    NVIC_SetPriority(PendSV_IRQn, 3);
+    NVIC_SetPriority(SysTick_IRQn, 3);
+
+    Usb_If_Ok_Led = false;
+    Led_Power_Up = true;
+    Emi_Test_Start = false;
+    Keyboard_Reset = false;
+}
+
+void keyboard_post_init_kb(void) {
+    // NKRO is unreliable over Bluetooth, only honour the saved setting on USB and 2.4G
+    if (Keyboard_Info.Key_Mode != QMK_BLE_MODE && keymap_config.nkro != Keyboard_Info.Nkro) {
+        keymap_config.nkro = Keyboard_Info.Nkro;
+    }
+
+    if (Keyboard_Info.Mac_Win_Mode) {
+        uint8_t current_layer = get_highest_layer(layer_state);
+        if (current_layer != 1) {
+            layer_on(1);
+        }
+    }
+    keyboard_post_init_user();
+}
+
+// LED display functions adapted from womier common
+void Led_Rf_Mode_Show(void) {
+    uint8_t Temp_Colour = 0, Led_Index = 0;
+    if (Keyboard_Info.Key_Mode == QMK_BLE_MODE) {
+        if (Keyboard_Info.Ble_Channel == QMK_BLE_CHANNEL_1) {
+            Temp_Colour = 5;
+            Led_Index = LED_BLE_1_INDEX;
+        } else if (Keyboard_Info.Ble_Channel == QMK_BLE_CHANNEL_2) {
+            Temp_Colour = 5;
+            Led_Index = LED_BLE_2_INDEX;
+        } else if (Keyboard_Info.Ble_Channel == QMK_BLE_CHANNEL_3) {
+            Temp_Colour = 5;
+            Led_Index = LED_BLE_3_INDEX;
+        }
+    } else if (Keyboard_Info.Key_Mode == QMK_2P4G_MODE) {
+        Temp_Colour = 3;
+        Led_Index = LED_2P4G_INDEX;
+    }
+
+    if (Keyboard_Status.System_Connect_Status == KB_MODE_CONNECT_PAIR) {
+        if (Systick_Led_Count < 10) {
+            rgb_matrix_set_color(Led_Index, Led_Colour_Tab[Temp_Colour][0], Led_Colour_Tab[Temp_Colour][1], Led_Colour_Tab[Temp_Colour][2]);
+        } else {
+            rgb_matrix_set_color(Led_Index, 0, 0, 0);
+        }
+
+        if (Systick_Led_Count >= 20) {
+            Systick_Led_Count = 0;
+        }
+    } else if (Keyboard_Status.System_Connect_Status == KB_MODE_CONNECT_RETURN) {
+        if (Systick_Led_Count < 25) {
+            rgb_matrix_set_color(Led_Index, Led_Colour_Tab[Temp_Colour][0], Led_Colour_Tab[Temp_Colour][1], Led_Colour_Tab[Temp_Colour][2]);
+        } else {
+            rgb_matrix_set_color(Led_Index, 0, 0, 0);
+        }
+
+        if (Systick_Led_Count >= 50) {
+            Systick_Led_Count = 0;
+        }
+    } else {
+        rgb_matrix_set_color(Led_Index, Led_Colour_Tab[Temp_Colour][0], Led_Colour_Tab[Temp_Colour][1], Led_Colour_Tab[Temp_Colour][2]);
+
+        if (Systick_Led_Count >= 240) {
+            Systick_Led_Count = 0;
+            Led_Rf_Pair_Flg = false;
+            if (Keyboard_Info.Key_Mode == QMK_BLE_MODE) {
+                User_Batt_Send_Spi = true;
+            }
+        }
+    }
+}
+
+void Led_Power_Low_Show(void) {
+    for (uint8_t i = 0; i < RGB_MATRIX_LED_COUNT; i++) {
+        rgb_matrix_set_color(i, 0, 0, 0);
+    }
+
+    if (Systick_Led_Count < 25) {
+        rgb_matrix_set_color(LED_BATT_INDEX, U_PWM, 0x00, 0x00);
+    } else {
+        rgb_matrix_set_color(LED_BATT_INDEX, 0x00, 0x00, 0x00);
+    }
+
+    if (Systick_Led_Count >= 50) {
+        Systick_Led_Count = 0;
+    }
+}
+
+void Led_Point_Flash_Show(void) {
+    if (Systick_Led_Count < 25) {
+        if (Led_Point_Count) {
+            // Regular LED point counting - light all LEDs
+            rgb_matrix_driver_set_color_all(U_PWM, U_PWM, U_PWM);
+        } else if (Mac_Win_Point_Count) {
+            // Mac/Win mode switching - only blink caps lock LED
+            rgb_matrix_set_color(LED_CAP_INDEX, U_PWM, U_PWM, 0X00);
+        } else if (Debounce_Function_Count) {
+            rgb_matrix_set_color(LED_CAP_INDEX, 0X00, U_PWM, 0X00);
+        } else {
+            rgb_matrix_set_color(LED_CAP_INDEX, U_PWM, 0X00, 0X00);
+        }
+    } else {
+        if (Led_Point_Count) {
+            // Turn off all LEDs for regular point counting
+            rgb_matrix_driver_set_color_all(0X00, 0X00, 0X00);
+        } else if (Mac_Win_Point_Count || Debounce_Function_Count || Debounce_Point_Count) {
+            // Turn off only caps lock LED for Mac/Win mode switching
+            rgb_matrix_set_color(LED_CAP_INDEX, 0X00, 0X00, 0X00);
+        }
+    }
+
+    if (Systick_Led_Count >= 50) {
+        Systick_Led_Count = 0;
+
+        if (Led_Point_Count) {
+            Led_Point_Count--;
+        } else if (Mac_Win_Point_Count) {
+            Mac_Win_Point_Count--;
+        } else {
+            Debounce_Point_Count--;
+        }
+    }
+}
+
+void Led_Batt_Number_Show(void) {
+    if (es_stdby_pin_state == 1) {
+        if (Batt_Led_Count >= 2) {
+            Batt_Led_Count = 0;
+
+            if (User_Key_Batt_Count > 3) {
+                User_Key_Batt_Count -= 3;
+            } else {
+                User_Key_Batt_Count = 127;
+            }
+        }
+
+        uint8_t Tmep_Pwm = User_Key_Batt_Count;
+
+        for (uint8_t i = 0; i < 10; i++) {
+            rgb_matrix_set_color(Led_Batt_Index_Tab[i], 0X00, Led_Wave_Pwm_Tab[Tmep_Pwm], 0X00);
+            Tmep_Pwm += 8;
+            if (Tmep_Pwm >= 128) {
+                Tmep_Pwm -= 128;
+            }
+        }
+    } else if (es_stdby_pin_state == 2) {
+        for (uint8_t i = 0; i < 10; i++) {
+            rgb_matrix_set_color(Led_Batt_Index_Tab[i], 0X00, 0XFF, 0X00);
+        }
+    } else {
+        uint8_t Colour_R = 0, Colour_G = 0, Colour_B = 0;
+        uint8_t Temp_Count = (Keyboard_Info.Batt_Number * 10) / 100;  // Scale to 10 LEDs
+        if (Temp_Count > 10) {
+            Temp_Count = 10;
+        }
+
+        if (Keyboard_Info.Batt_Number <= 20) {
+            Colour_R = 0XFF;    Colour_G = 0X00;    Colour_B = 0X00;  // Red below 20%
+        } else if (Keyboard_Info.Batt_Number <= 50) {
+            Colour_R = 0XFF;    Colour_G = 0XFF;    Colour_B = 0X00;  // Yellow 20-50%
+        } else {
+            Colour_R = 0X00;    Colour_G = 0XFF;    Colour_B = 0X00;  // Green above 50%
+        }
+
+        for (uint8_t i = 0; i < Temp_Count; i++) {
+            rgb_matrix_set_color(Led_Batt_Index_Tab[i], Colour_R, Colour_G, Colour_B);
+        }
+    }
+}
+
+void User_Point_Show(void){
+    if (Led_Point_Count || Mac_Win_Point_Count || Debounce_Point_Count) {
+        Led_Point_Flash_Show();
+    } else {
+        Systick_Led_Count = 0;
+
+        if (host_keyboard_led_state().caps_lock) {
+            rgb_matrix_set_color(LED_CAP_INDEX, U_PWM, U_PWM, U_PWM);
+        }
+
+        if (Keyboard_Info.Win_Lock) {
+            rgb_matrix_set_color(LED_WIN_L_INDEX, U_PWM, U_PWM, U_PWM);
+        }
+    }
+}
+
+void User_Test_Colour_Show(void){
+    uint8_t Test_R = 0, Test_G = 0, Test_B = 0;
+    switch(Test_Colour) {
+        case 0:  Test_R = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_G = 0;                             Test_B = 0;                             break;
+        case 1:  Test_R = 0;                             Test_G = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_B = 0;                             break;
+        case 2:  Test_R = 0;                             Test_G = 0;                             Test_B = RGB_MATRIX_MAXIMUM_BRIGHTNESS; break;
+        case 3:  Test_R = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_G = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_B = RGB_MATRIX_MAXIMUM_BRIGHTNESS; break;
+        default: Test_R = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_G = RGB_MATRIX_MAXIMUM_BRIGHTNESS; Test_B = RGB_MATRIX_MAXIMUM_BRIGHTNESS; break;
+    }
+    rgb_matrix_driver_set_color_all(Test_R, Test_G, Test_B);
+}
+
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    if (User_Power_Low) {
+        Led_Power_Low_Show();
+    } else if (Test_Led) {
+        User_Test_Colour_Show();
+    } else if (Led_Rf_Pair_Flg && (Keyboard_Info.Key_Mode != QMK_USB_MODE)) {
+        Led_Rf_Mode_Show();
+    } else if (User_Key_Batt_Num_Show) {
+        Led_Batt_Number_Show();
+    } else {
+        User_Point_Show();
+
+#if LOGO_LED_ENABLE
+        Logo_Mode_Show();
+#endif
+
+        if (Key_Fn_Status) {
+            switch (Keyboard_Info.Key_Mode) {
+                case QMK_BLE_MODE: {
+                    switch (Keyboard_Info.Ble_Channel) {
+                        case QMK_BLE_CHANNEL_1: rgb_matrix_set_color(LED_BLE_1_INDEX, U_PWM, U_PWM, U_PWM); break;
+                        case QMK_BLE_CHANNEL_2: rgb_matrix_set_color(LED_BLE_2_INDEX, U_PWM, U_PWM, U_PWM); break;
+                        case QMK_BLE_CHANNEL_3: rgb_matrix_set_color(LED_BLE_3_INDEX, U_PWM, U_PWM, U_PWM); break;
+                        default:                                                                            break;
+                    } 
+                } break;
+                case QMK_2P4G_MODE:             rgb_matrix_set_color(LED_2P4G_INDEX, U_PWM, U_PWM, U_PWM);  break;
+                case QMK_USB_MODE:              rgb_matrix_set_color(LED_USB_INDEX,  U_PWM, U_PWM, U_PWM);  break;
+                default:                                                                                    break;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    Usb_Change_Mode_Delay = 0;
+    Usb_Change_Mode_Wakeup = false;
+
+    if (Test_Led) {
+        if ((keycode != KC_SPC) && (keycode != MO(2)) && (keycode != MO(3)) && (keycode != KC_LCTL)) {
+            Test_Led = false;
+        }
+    }
+
+    switch (keycode) {
+        case QMK_KB_MODE_2P4G: {                                    //2.4G
+            if (record->event.pressed) {
+                Key_2p4g_Status = true;
+                Usb_Disconnect();
+                if (Keyboard_Info.Key_Mode != QMK_2P4G_MODE) {
+                    Keyboard_Info.Key_Mode = QMK_2P4G_MODE;
+                    Spi_Send_Commad(USER_SWITCH_2P4G_MODE);
+                    Save_Flash_Set();
+                    Led_Rf_Pair_Flg = true;
+                    // Show mode indicator for 1 second
+                    Show_Mode_Indicator = true;
+                    Mode_Indicator_Timer = timer_read();
+                }
+            } else {
+                Key_2p4g_Status = false;
+            }
+            Time_3s_Count = 0;
+        } return true;
+        case QMK_KB_MODE_BLE1: {
+            if (record->event.pressed) {
+                Key_Ble_1_Status = true;
+                Usb_Disconnect();
+                if ((Keyboard_Info.Key_Mode != QMK_BLE_MODE) || ((Keyboard_Info.Key_Mode == QMK_BLE_MODE) && (Keyboard_Info.Ble_Channel != QMK_BLE_CHANNEL_1))) {   /*如果当前模式不是BLE模式则切换为BLE，或者BLE通道不相同*/
+                    Keyboard_Info.Key_Mode = QMK_BLE_MODE;
+                    Keyboard_Info.Ble_Channel = QMK_BLE_CHANNEL_1;
+                    Spi_Send_Commad(USER_SWITCH_BLE_1_MODE);
+                    Save_Flash_Set();
+                    Led_Rf_Pair_Flg = true;
+                    // Show mode indicator for 1 second
+                    Show_Mode_Indicator = true;
+                    Mode_Indicator_Timer = timer_read();
+                }
+            } else {
+                Key_Ble_1_Status = false;
+            }
+            Time_3s_Count = 0;
+        } return true;
+        case QMK_KB_MODE_BLE2: {
+            if (record->event.pressed) {
+                Key_Ble_2_Status = true;
+                Usb_Disconnect();
+                if ((Keyboard_Info.Key_Mode != QMK_BLE_MODE) || ((Keyboard_Info.Key_Mode == QMK_BLE_MODE) && (Keyboard_Info.Ble_Channel != QMK_BLE_CHANNEL_2))) {   /*如果当前模式不是BLE模式则切换为BLE，或者BLE通道不相同*/
+                    Keyboard_Info.Key_Mode = QMK_BLE_MODE;
+                    Keyboard_Info.Ble_Channel = QMK_BLE_CHANNEL_2;
+                    Spi_Send_Commad(USER_SWITCH_BLE_2_MODE);
+                    Save_Flash_Set();
+                    Led_Rf_Pair_Flg = true;
+                    // Show mode indicator for 1 second
+                    Show_Mode_Indicator = true;
+                    Mode_Indicator_Timer = timer_read();
+                }
+            } else {
+                Key_Ble_2_Status = false;
+            }
+            Time_3s_Count = 0;
+        } return true;
+        case QMK_KB_MODE_BLE3: {
+            if (record->event.pressed) {
+                Key_Ble_3_Status = true;
+                Usb_Disconnect();
+                if ((Keyboard_Info.Key_Mode != QMK_BLE_MODE) || ((Keyboard_Info.Key_Mode == QMK_BLE_MODE) && (Keyboard_Info.Ble_Channel != QMK_BLE_CHANNEL_3))) {   /*如果当前模式不是BLE模式则切换为BLE，或者BLE通道不相同*/
+                    Keyboard_Info.Key_Mode = QMK_BLE_MODE;
+                    Keyboard_Info.Ble_Channel = QMK_BLE_CHANNEL_3;
+                    Spi_Send_Commad(USER_SWITCH_BLE_3_MODE);
+                    Save_Flash_Set();
+                    Led_Rf_Pair_Flg = true;
+                    // Show mode indicator for 1 second
+                    Show_Mode_Indicator = true;
+                    Mode_Indicator_Timer = timer_read();
+                }
+            } else {
+                Key_Ble_3_Status = false;
+            }
+            Time_3s_Count = 0;
+        } return true;
+        case QMK_KB_MODE_USB: {
+            if (record->event.pressed) {
+                if (Keyboard_Info.Key_Mode != QMK_USB_MODE) {
+                    Keyboard_Info.Key_Mode = QMK_USB_MODE;
+                    Spi_Send_Commad(USER_SWITCH_USB_MODE);
+                    es_restart_usb_driver();
+                    Save_Flash_Set();
+                    Led_Rf_Pair_Flg = false;
+                    // Show mode indicator for 1 second
+                    Show_Mode_Indicator = true;
+                    Mode_Indicator_Timer = timer_read();
+                }
+            }
+        } return true;
+        case QMK_BATT_NUM: {
+            if (record->event.pressed) {
+                User_Key_Batt_Num_Show = true;
+                User_Key_Batt_Count = 0;
+            } else {
+                User_Key_Batt_Num_Show = false;
+                User_Key_Batt_Count = 0;
+            }
+        } return true;
+        case QMK_WIN_LOCK: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Mac_Win_Mode == INIT_MAC_MODE) {
+                    if (Keyboard_Info.Win_Lock == INIT_WIN_LOCK) {
+                        Keyboard_Info.Win_Lock = INIT_WIN_NLOCK;
+                        Save_Flash_Set();
+                    }
+                } else {
+                    if (Keyboard_Info.Win_Lock == INIT_WIN_NLOCK) {
+                        Keyboard_Info.Win_Lock = INIT_WIN_LOCK;
+                        unregister_code(KC_LGUI); unregister_code(KC_RGUI); unregister_code(KC_APP);
+                    } else {
+                        Keyboard_Info.Win_Lock = INIT_WIN_NLOCK;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case QMK_KB_SIX_N_CH: {
+            if (record->event.pressed) {
+                if(keymap_config.nkro) {
+                    es_change_qmk_nkro_mode_disable();
+                    Mac_Win_Point_Count = 3;
+                } else {
+                    es_change_qmk_nkro_mode_enable();
+                    Led_Point_Count = 3;
+                }
+            }
+        } return true;
+        case QMK_TEST_COLOUR: {
+            if (!record->event.pressed) {
+                if (Test_Led == false) {
+                    Test_Led = true;
+                    Test_Colour = 0;
+                }
+            }
+        } return true;
+        case KC_SPC: {
+            if (!record->event.pressed) {
+                if (Test_Led) {
+                    Test_Colour++;
+                    if (Test_Colour >= 4) {
+                        Test_Colour = 0;
+                    }
+                }
+            }
+        } return true;
+        case KC_LGUI: {                                             //key_win_l
+            if (Keyboard_Info.Win_Lock) {
+                record->event.pressed = false;
+            }
+        } return true;
+        case KC_RGUI: {                                             //key_win_r
+            if (Keyboard_Info.Win_Lock) {
+                record->event.pressed = false;
+            }
+        } return true;
+        case KC_APP: {                                              //key_app
+            if (Keyboard_Info.Win_Lock) {
+                record->event.pressed = false;
+            }
+        } return true;
+        case RM_VALU: {
+            if (!record->event.pressed) {
+                if (rgb_matrix_get_val() >= RGB_MATRIX_MAXIMUM_BRIGHTNESS) {
+                    Led_Point_Count = 3;
+                }
+            }
+        } return true;
+        case RM_VALD: {
+            if (!record->event.pressed) {
+                if (rgb_matrix_get_val() <= 0) {
+                    Led_Point_Count = 3;
+                }
+            }
+        } return true;
+        case RM_SPDU: {
+            if (!record->event.pressed) {
+                if (rgb_matrix_get_speed() >= 255) {
+                    Led_Point_Count = 3;
+                }
+            }
+        } return true;
+        case RM_SPDD: {
+            if (!record->event.pressed) {
+                if (rgb_matrix_get_speed() <= 0) {
+                    Led_Point_Count = 3;
+                }
+            }
+        } return true;
+        case MO(2): {                                               //FN
+            if (record->event.pressed) {
+                Key_Fn_Status = true;
+            } else {
+                Key_Fn_Status = false;
+            }
+        } return true;
+        case MO(3): {                                               //FN
+            if (record->event.pressed) {
+                Key_Fn_Status = true;
+            } else {
+                Key_Fn_Status = false;
+            }
+        } return true;
+        case TO(0): {                                               //WIN
+            if (!record->event.pressed) {
+                if ((record->event.key.col == WIN_COL) && (record->event.key.row == WIN_ROL) && (Keyboard_Info.Mac_Win_Mode != INIT_WIN_MODE)) {
+                    Keyboard_Info.Mac_Win_Mode = INIT_WIN_MODE;
+                    Mac_Win_Point_Count = 1;
+                    unregister_code(KC_LALT); unregister_code(KC_LGUI); unregister_code(KC_RALT); unregister_code(KC_RGUI); unregister_code(KC_APP);
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case TO(1): {                                               //MAC
+            if (!record->event.pressed) {
+                if ((record->event.key.col == MAC_COL) && (record->event.key.row == MAC_ROL) && (Keyboard_Info.Mac_Win_Mode != INIT_MAC_MODE)) {
+                    Keyboard_Info.Mac_Win_Mode = INIT_MAC_MODE;
+                    Keyboard_Info.Win_Lock = INIT_WIN_NLOCK;
+                    Mac_Win_Point_Count = 3;
+                    unregister_code(KC_LALT); unregister_code(KC_LGUI); unregister_code(KC_RALT); unregister_code(KC_RGUI); unregister_code(KC_APP);
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case U_EE_CLR: {
+            if (record->event.pressed) {
+                User_QMK_EE_CLR_Flag = true;
+            } else {
+                User_QMK_EE_CLR_Flag = false;
+                Time_3s_EE_CLR_Count = 0;
+            }
+        } return true;
+        case QMK_DEBOUNCE: {
+            Debounce_Function_Status = record->event.pressed;
+            User_Key_3s_Count = 0;
+        } return true;
+        case RGB_RTOG: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Led_On_Off) {
+                    Keyboard_Info.Led_On_Off = 0;
+#if LOGO_LED_ENABLE
+                    Keyboard_Info.Logo_On_Off = 0;
+#endif
+                    if (rgb_matrix_get_val() == 0) {
+                        rgb_matrix_sethsv_noeeprom(rgb_matrix_get_hue(), rgb_matrix_get_sat(), 200);
+                    }
+                } else {
+                    Keyboard_Info.Led_On_Off = 1;
+#if LOGO_LED_ENABLE
+                    Keyboard_Info.Logo_On_Off = 1;
+#endif
+                }
+                Save_Flash_Set();
+            }
+        } return true;
+        case EE_CLR: {
+            if (record->event.pressed) {
+                Keyboard_Info.Nkro = INIT_ALL_KEY;
+                Keyboard_Info.Mac_Win_Mode = INIT_WIN_MODE;
+                Keyboard_Info.Win_Lock = INIT_WIN_NLOCK;
+                Keyboard_Info.Led_On_Off = INIT_LED_ON_OFF;
+#if LOGO_LED_ENABLE
+                Keyboard_Info.Logo_On_Off = INIT_LOGO_ON_OFF;
+                Keyboard_Info.Logo_Mode = INIT_LOGO_MODE;
+                Keyboard_Info.Logo_Colour = INIT_LOGO_COLOUR;
+                Keyboard_Info.Logo_Saturation = INIT_LOGO_SATURATION;
+                Keyboard_Info.Logo_Brightness = INIT_LOGO_BRIGHTNESS;
+                Keyboard_Info.Logo_Speed = INIT_LOGO_SPEED;
+                Logo_Init();
+#endif
+                Reset_Save_Flash = true;
+                eeprom_write_block_user((void *)&Keyboard_Info.Key_Mode, 0, sizeof(Keyboard_Info_t));
+                Reset_Save_Flash = false;
+            }
+        } return true;
+#if LOGO_LED_ENABLE
+        case LOGO_TOG: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Logo_On_Off) {
+                    Keyboard_Info.Logo_On_Off = 0;
+                    if (Keyboard_Info.Logo_Brightness == 0) {
+                        Keyboard_Info.Logo_Brightness = LOGO_MAX_BRIGHTNESS;
+                    }
+                } else {
+                    Keyboard_Info.Logo_On_Off = LOGO_LED_OFF;
+                }
+                Logo_Init();
+                Save_Flash_Set();
+            }
+        } return true;
+        case LOGO_MOD: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Logo_Mode <= (LOGO_OFF_MODE - 1)) {
+                    Keyboard_Info.Logo_Mode++;
+                    if (Keyboard_Info.Logo_Mode == LOGO_OFF_MODE) {
+                        Keyboard_Info.Logo_On_Off = LOGO_LED_OFF;
+                    }
+                } else {
+                    Keyboard_Info.Logo_On_Off = LOGO_LED_ON;
+                    Keyboard_Info.Logo_Mode = LOGO_WAVE_RGB_MODE;
+                }
+                Logo_Init();
+                Save_Flash_Set();
+            }
+        } return true;
+        case LOGO_RMOD: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Logo_On_Off == LOGO_LED_ON) {
+                    if (Keyboard_Info.Logo_Mode <= LOGO_WAVE_RGB_MODE) {
+                        Keyboard_Info.Logo_Mode = LOGO_OFF_MODE;
+                    } else {
+                        Keyboard_Info.Logo_Mode--;
+                    }
+                    Logo_Init();
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_HUI: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE) && ((Keyboard_Info.Logo_Mode & ~2) != LOGO_WAVE_RGB_MODE)) {
+                    if (Keyboard_Info.Logo_Colour + COLOUR_LEVEL >= LOGO_MAX_COLOUR) {
+                        Keyboard_Info.Logo_Colour += (COLOUR_LEVEL + 1);
+                    } else {
+                        Keyboard_Info.Logo_Colour += COLOUR_LEVEL;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_HUD: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE) && ((Keyboard_Info.Logo_Mode & ~2) != LOGO_WAVE_RGB_MODE)) {
+                    if (Keyboard_Info.Logo_Colour <= COLOUR_LEVEL) {
+                        Keyboard_Info.Logo_Colour -= (COLOUR_LEVEL + 1);
+                    } else {
+                        Keyboard_Info.Logo_Colour -= COLOUR_LEVEL;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_SAI: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Saturation > SATURATION_LEVEL) {
+                        Keyboard_Info.Logo_Saturation -= SATURATION_LEVEL;
+                    } else {
+                        Keyboard_Info.Logo_Saturation = LOGO_MAX_SATURATION;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_SAD: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Saturation + SATURATION_LEVEL >= LOGO_MIN_SATURATION) {
+                        Keyboard_Info.Logo_Saturation = LOGO_MIN_SATURATION;
+                    } else {
+                        Keyboard_Info.Logo_Saturation += SATURATION_LEVEL;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_VAI: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Brightness + BRIGHTNESS_LEVEL < LOGO_MAX_BRIGHTNESS) {
+                        Keyboard_Info.Logo_Brightness += BRIGHTNESS_LEVEL;
+                    } else {
+                        Keyboard_Info.Logo_Brightness = LOGO_MAX_BRIGHTNESS;
+                        Led_Point_Count = 3;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_VAD: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Brightness <= BRIGHTNESS_LEVEL) {
+                        Keyboard_Info.Logo_Brightness = LOGO_MIN_BRIGHTNESS;
+                        Led_Point_Count = 3;
+                    } else {
+                        Keyboard_Info.Logo_Brightness -= BRIGHTNESS_LEVEL;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_SPI: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Speed + SPEED_LEVEL < LOGO_MAX_SPEED) {
+                        Keyboard_Info.Logo_Speed += SPEED_LEVEL;
+                    } else {
+                        Keyboard_Info.Logo_Speed = LOGO_MAX_SPEED;
+                        Led_Point_Count = 3;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        case LOGO_SPD: {
+            if (!record->event.pressed) {
+                if ((Keyboard_Info.Logo_On_Off == LOGO_LED_ON) && (Keyboard_Info.Logo_Mode != LOGO_OFF_MODE)) {
+                    if (Keyboard_Info.Logo_Speed <= SPEED_LEVEL) {
+                        Keyboard_Info.Logo_Speed = LOGO_MIN_SPEED;
+                        Led_Point_Count = 3;
+                    } else {
+                        Keyboard_Info.Logo_Speed -= SPEED_LEVEL;
+                    }
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+#endif
+        case QMK_DEBUG_SWITCH: {
+            if (record->event.pressed) {
+                Debug_Mode_Switch_Position();
+            }
+        } return true;
+        case QMK_MAC_WIN_CH: {
+            if (!record->event.pressed) {
+                if (Keyboard_Info.Mac_Win_Mode == INIT_WIN_MODE) {
+                    // Switch to Mac mode
+                    Keyboard_Info.Mac_Win_Mode = INIT_MAC_MODE;
+                    Keyboard_Info.Win_Lock = INIT_WIN_NLOCK;  // Unlock Win key in Mac mode
+                    Mac_Win_Point_Count = 3;  // Blink 3 times for Mac mode
+                    layer_on(1);  // Switch to Mac layer
+                    unregister_code(KC_LALT); unregister_code(KC_LGUI); unregister_code(KC_RALT); unregister_code(KC_RGUI); unregister_code(KC_APP);
+                    Save_Flash_Set();
+                } else {
+                    // Switch to Windows mode
+                    Keyboard_Info.Mac_Win_Mode = INIT_WIN_MODE;
+                    Mac_Win_Point_Count = 1;  // Blink 1 time for Windows mode
+                    layer_off(1);  // Switch to Windows layer (layer 0)
+                    unregister_code(KC_LALT); unregister_code(KC_LGUI); unregister_code(KC_RALT); unregister_code(KC_RGUI); unregister_code(KC_APP);
+                    Save_Flash_Set();
+                }
+            }
+        } return true;
+        default:    return true; // Process all other keycodes normally
+    }
+}
+
+// ---------- Прямое управление каждым светодиодом (для RGB Control) ----------
+// VIA-команда id_custom_set_value (0x07) на канале 0x10:
+//   07 10 <первый светодиод> <сколько, до 9> R G B R G B ...
+// Получив кадр, клавиатура переключается на эффект DIRECT без записи в память, поэтому выбранный
+// в VIA эффект возвращается после переподключения или выбора другого эффекта.
+// id_custom_get_value (0x08) на канале 0x10 отвечает числом светодиодов — по нему программа понимает,
+// что прошивка умеет прямой режим.
+#if defined(VIA_ENABLE)
+#define DIRECT_CHANNEL      0x10
+#define DIRECT_MAX_PER_PACKET   9
+
+uint8_t g_direct_rgb[RGB_MATRIX_LED_COUNT][3];
+
+void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
+    uint8_t *command_id = &(data[0]);
+    uint8_t *channel_id = &(data[1]);
+
+    if (*channel_id != DIRECT_CHANNEL) {
+        *command_id = id_unhandled;
+        return;
+    }
+
+    if (*command_id == id_custom_get_value) {
+        data[2] = RGB_MATRIX_LED_COUNT;
+        data[3] = DIRECT_MAX_PER_PACKET;
+        return;
+    }
+
+    if (*command_id == id_custom_set_value) {
+        uint8_t first = data[2];
+        uint8_t count = data[3];
+        if (count > DIRECT_MAX_PER_PACKET) count = DIRECT_MAX_PER_PACKET;
+        for (uint8_t i = 0; i < count && first + i < RGB_MATRIX_LED_COUNT && 6 + i * 3 < length; i++) {
+            g_direct_rgb[first + i][0] = data[4 + i * 3];
+            g_direct_rgb[first + i][1] = data[5 + i * 3];
+            g_direct_rgb[first + i][2] = data[6 + i * 3];
+        }
+        if (rgb_matrix_get_mode() != RGB_MATRIX_CUSTOM_DIRECT) {
+            rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_DIRECT);
+        }
+        return;
+    }
+
+    *command_id = id_unhandled;
+}
+#endif
