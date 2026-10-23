@@ -1,0 +1,46 @@
+name: Добавить поддержку устройства
+description: Ваше устройство с подсветкой пока не поддерживается — помогите его добавить
+title: "[Новое устройство] "
+labels: ["новое устройство"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Поддержка добавляется по данным с живого железа. Чем подробнее — тем быстрее.
+  - type: input
+    id: model
+    attributes:
+      label: Точная модель
+      placeholder: "например, Gigabyte B650 AORUS ELITE AX или Razer BlackWidow V4"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Тип
+      options:
+        - Материнская плата
+        - Видеокарта
+        - Оперативная память
+        - Клавиатура
+        - Мышь
+        - Гарнитура / микрофон / микшер
+        - Водянка / хаб / контроллер вентиляторов
+        - Другое
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт совместимости
+      description: "⚙ → «Сохранить отчёт совместимости» — файл появится на рабочем столе. Перетащите его сюда."
+    validations:
+      required: true
+  - type: dropdown
+    id: test
+    attributes:
+      label: Готовы проверить тестовую версию?
+      description: Для новой поддержки иногда нужно запустить тестовую сборку и сказать, что видно.
+      options:
+        - Да
+        - Нет
