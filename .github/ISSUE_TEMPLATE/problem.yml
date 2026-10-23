@@ -1,0 +1,60 @@
+name: Не работает
+description: Устройство не находится, подсветка или вентиляторы работают не так, программа падает
+title: "[Не работает] "
+labels: ["проблема"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что пишете! Проще всего отправить отчёт прямо из программы: кнопка **«Не работает?»** на экране устройства или **⚙ → «Сообщить о проблеме»**.
+        Если удобнее здесь — заполните поля ниже.
+  - type: input
+    id: version
+    attributes:
+      label: Версия RGB Control
+      description: Видна внизу окна настроек (⚙)
+      placeholder: "2.7"
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Что не работает
+      options:
+        - Вентиляторы / подсветка платы
+        - Охлаждение (скорость вентиляторов, помпа)
+        - Видеокарта
+        - Оперативная память
+        - Клавиатура
+        - Мышь
+        - Микшер / микрофон
+        - Звук (обработка микрофона)
+        - Установщик
+        - Программа падает или зависает
+        - Другое
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Модель устройства
+      placeholder: "например, ASUS TUF RTX 4070 или G.Skill Trident Z RGB F4-3600C16D-16GTZR"
+  - type: textarea
+    id: what
+    attributes:
+      label: Что происходит
+      description: Что вы делали, что ожидали и что получилось. Скриншоты очень помогают.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Отчёт совместимости
+      description: "⚙ → «Сохранить отчёт совместимости» — файл появится на рабочем столе. Перетащите его сюда."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверил
+      options:
+        - label: SignalRGB, iCUE, Armoury Crate и другие программы подсветки закрыты
+        - label: Программа запущена с правами администратора (нужно для охлаждения и ОЗУ)
