@@ -41,7 +41,7 @@
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_DISABLE_AFTER_TIMEOUT 0
 #define RGB_MATRIX_LED_FLUSH_LIMIT 16
-#define RGB_MATRIX_MAXIMUM_BRIGHTNESS 200
+#define RGB_MATRIX_MAXIMUM_BRIGHTNESS 235     // было 200 (как у Cidoo); 235 — ярче на ~18 %, с запасом по току USB
 #define RGB_MATRIX_SLEEP
 
 // from via

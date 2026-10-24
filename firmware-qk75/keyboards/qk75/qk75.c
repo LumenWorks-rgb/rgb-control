@@ -840,6 +840,12 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
     if (*command_id == id_custom_get_value) {
         data[2] = RGB_MATRIX_LED_COUNT;
         data[3] = DIRECT_MAX_PER_PACKET;
+        // Свои эффекты прошивки. data[4] — их набор: 1 — «Сердечки» (номер в data[5]);
+        // 2 — ещё «Пламя» и «Змейка» (номера в data[6] и data[7])
+        data[4] = 2;
+        data[5] = RGB_MATRIX_CUSTOM_HEARTS;
+        data[6] = RGB_MATRIX_CUSTOM_FIRE;
+        data[7] = RGB_MATRIX_CUSTOM_SNAKE;
         return;
     }
 
