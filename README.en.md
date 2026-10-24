@@ -15,8 +15,8 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 ## Features
 
 - **Lighting** — effects (rainbow, wave, breathing, fire, meteors and more), custom colors, all devices in sync. Fans on the motherboard can be mapped one by one.
-- **Cooling** — fan and pump curves by CPU temperature, fixed speed or "as in BIOS". On overheating all fans jump to 100% automatically.
-- **Sound** — OBS-style microphone processing: noise suppression, noise gate, EQ, compressor, limiter. The processed voice can go to Discord and games via VB-Audio Virtual Cable.
+- **Cooling** — fan and pump curves by temperature, fixed speed or "as in BIOS". NVIDIA graphics card fans can be tuned too. The "Quiet curve" mode makes case, CPU and GPU fans noticeably quieter with one click while still ramping up when hot. On overheating fans jump to 100% automatically.
+- **Sound** — OBS-style microphone processing: RNNoise neural noise suppression, noise gate, EQ, compressor, limiter. The processed voice can go to Discord and games via VB-Audio Virtual Cable.
 - **Setup check** — on first launch the app scans your PC against a catalog of ~2,500 RGB devices and shows what it controls and what is not supported yet.
 - **Stays out of the way** — almost no CPU load, lives in the tray, starts with Windows.
 
