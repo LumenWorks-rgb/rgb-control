@@ -32,7 +32,7 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 |---|---|
 | Motherboards (ARGB headers) | ASRock Polychrome USB — tested on ASRock B550M Pro RS and B550M Pro SE |
 | Cooling | Fans and pump via Nuvoton chips (tested on NCT6796D-R) |
-| Graphics cards | MSI RTX 5060 Gaming Trio |
+| Graphics cards | MSI RTX 5060 Gaming Trio; Palit RTX 3070 GameRock (whole card in one colour, with white balance) |
 | RAM | ENE DIMM_LED-0103 controllers (ADATA XPG) |
 | Keyboards | Cidoo QK75 (per-key lighting with the unofficial firmware from [`firmware-qk75`](firmware-qk75), at your own risk) |
 | Mice | Attack Shark X11 |
@@ -41,6 +41,11 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 
 ### 🟡 Expected to work, not tested yet
 
+- **ASUS motherboards** with the Aura USB controller (X570/B550 generation and newer: ROG, TUF, Prime, Strix) — since 2.8. Armoury Crate must be closed.
+- **Attack Shark mice** X6, R1, X3, X3 Pro, X3 Max, X8 Plus — since 2.8. The model is detected automatically (or picked by hand); until it is known, DPI is left untouched.
+- **Cidoo keyboards** on QMK/VIA: QK61, QK61 V2, V21, V33, V65 Pro, V68, V75, V75 Plus, V87, ABM066, ABM098, Stellar, Nebula — since 2.8. Built-in keyboard effects, color, brightness and speed; the app detects the control method and effect list by itself.
+- **FIFINE** — microphones, headsets and mixers on the same protocol as the AM9, and headphone stands with lighting — since 2.8.
+- **Palit / PNY / Gainward graphics cards** of other models with the same lighting controller — since 2.8.
 - **RAM** with other ENE controllers — ASUS, G.Skill Trident Z, TeamGroup T-Force, Patriot Viper and others.
 - **Graphics cards** — other MSI RTX 40/50 series.
 - **Cooling** on other motherboards supported by LibreHardwareMonitor.
@@ -49,7 +54,7 @@ If you have such hardware, please try it and tell us whether it works.
 
 ### ❌ Not supported yet
 
-ASUS / MSI / Gigabyte motherboards, graphics cards from other vendors, Corsair and Kingston Fury RAM, Razer / Logitech / SteelSeries peripherals and much more. Support is added based on reports — see below.
+MSI / Gigabyte motherboards, older ASUS boards (X470 and earlier), graphics cards from other vendors, Corsair and Kingston Fury RAM, Razer / Logitech / SteelSeries peripherals and much more. Support is added based on reports — see below.
 
 ## Installation
 
