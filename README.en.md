@@ -47,6 +47,8 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 - **FIFINE** — microphones, headsets and mixers on the same protocol as the AM9, and headphone stands with lighting — since 2.8.
 - **Palit / PNY / Gainward graphics cards** of other models with the same lighting controller — since 2.8.
 - **Any QMK/VIA keyboard** — Keychron, GMMK, Akko and others with VIA support: effects, colour, brightness and speed. Effect names come from the VIA keyboard definitions (Keychron and nearly 200 other models with their own effect sets); others get the standard QMK list or numbered effects.
+- **Gigabyte motherboards with RGB Fusion 2** (ITE USB controller: B450 AORUS, X570, B550, B650, X670, Z690 and newer) — since 3.1. For now the whole board lighting is one colour driven by the app's effects. RGB Fusion / Gigabyte Control Center must be closed.
+- **Epomaker and Attack Shark keyboards on the ROYUAN chip** — TH80, TH80 V2, HE68 Lite, K86 and others — since 3.1. Built-in effects, colour, brightness and speed, wired only. On connect the app only reads the keyboard's mode.
 - **RAM** with other ENE controllers — ASUS, G.Skill Trident Z, TeamGroup T-Force, Patriot Viper and others.
 - **Graphics cards** — other MSI RTX 40/50 series.
 - **Cooling** on other motherboards supported by LibreHardwareMonitor.
@@ -55,9 +57,9 @@ If you have such hardware, please try it and tell us whether it works.
 
 ### ❌ Not supported yet
 
-MSI / Gigabyte motherboards, older ASUS boards (X470 and earlier), graphics cards from other vendors, Corsair and Kingston Fury RAM, Razer / Logitech / SteelSeries peripherals and much more. Support is added based on reports — see below.
+MSI motherboards, older ASUS boards (X470 and earlier), graphics cards from other vendors, Corsair and Kingston Fury RAM, Razer / Logitech / SteelSeries peripherals and much more. Support is added based on reports — see below.
 
-**Ajazz keyboards on Sonix and Sinowealth chips** (AK980, AK870, AK820 MAX, AK820 PRO and others) and **Ajazz mice** are recognized but not controlled yet. If you have one, press **«Хочу поддержку — отправить отчёт»** ("I want support — send a report") in the hardware window: support is added quickly from such a report.
+**Ajazz keyboards on Sonix and Sinowealth chips** (AK980, AK870, AK820 MAX, AK820 PRO and others), **Ajazz mice**, the **FIFINE AM8** microphone and lighting on older **Gigabyte** boards (RGB Fusion 1) are recognized but not controlled yet. If you have one, press **«Хочу поддержку — отправить отчёт»** ("I want support — send a report") in the hardware window: support is added quickly from such a report.
 
 ## Installation
 
