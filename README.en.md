@@ -6,6 +6,11 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 
 **[⬇ Download the latest version](../../releases/latest)** — `RGB Control Setup X.Y.exe`
 
+> [!IMPORTANT]
+> **Device not working or not listed? Send a report — it takes 10 seconds.**
+> In the app: the **«Не работает?»** ("Not working?") button on a device screen, or **⚙ → «Сообщить о проблеме»** ("Report a problem") → «Отправить» ("Send"). No personal data is sent.
+> New devices get supported from exactly these reports — usually within a few days. [More](#something-doesnt-work)
+
 ![RGB Control — main window](docs/screenshot-main.png)
 
 > The interface is currently in Russian. An English UI is planned.
