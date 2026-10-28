@@ -8,7 +8,7 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 
 > [!IMPORTANT]
 > **Device not working or not listed? Send a report — it takes 10 seconds.**
-> In the app: the **«Не работает?»** ("Not working?") button on a device screen, or **⚙ → «Сообщить о проблеме»** ("Report a problem") → «Отправить» ("Send"). No personal data is sent.
+> In the app: **«Отправить отчёт»** ("Send a report") at the bottom of the main window (or the **«Не работает?»** button on a device screen) → «Отправить» ("Send"). No personal data is sent. Author's email: **lumenworks.rgb@gmail.com**
 > New devices get supported from exactly these reports — usually within a few days. [More](#something-doesnt-work)
 
 ![RGB Control — main window](docs/screenshot-main.png)
@@ -54,7 +54,8 @@ A lightweight Windows app for RGB lighting, fan & pump curves and microphone pro
 - **Any QMK/VIA keyboard** — Keychron, GMMK, Akko and others with VIA support: effects, colour, brightness and speed. Effect names come from the VIA keyboard definitions (Keychron and nearly 200 other models with their own effect sets); others get the standard QMK list or numbered effects.
 - **Gigabyte motherboards with RGB Fusion 2** (ITE USB controller: B450 AORUS, X570, B550, B650, X670, Z690 and newer) — since 3.1. For now the whole board lighting is one colour driven by the app's effects. RGB Fusion / Gigabyte Control Center must be closed.
 - **Epomaker and Attack Shark keyboards on the ROYUAN chip** — TH80, TH80 V2, HE68 Lite, K86 and others — since 3.1. Built-in effects, colour, brightness and speed, wired only. On connect the app only reads the keyboard's mode.
-- **WLMOUSE mice** — Beast G, Beast X / X Pro / X V2, Beast Max, Beast Mini / Mini Pro, Beast Miao, Strider, Ying, Sword X, HUAN — since 3.2. DPI stages, polling rate, lift-off distance, debounce, sleep time, Angle Snap, Motion Sync, Ripple Control, Hyper Mode, battery; DPI button presses on the mouse are shown. On connect the settings are only read.- **RAM** with other ENE controllers — ASUS, G.Skill Trident Z, TeamGroup T-Force, Patriot Viper and others.
+- **WLMOUSE mice** — Beast G, Beast X / X Pro / X V2, Beast Max, Beast Mini / Mini Pro, Beast Miao, Strider, Ying, Sword X, HUAN — since 3.2. DPI stages, polling rate, lift-off distance, debounce, sleep time, Angle Snap, Motion Sync, Ripple Control, Hyper Mode, battery; DPI button presses on the mouse are shown. On connect the settings are only read.
+- **RAM** with other ENE controllers — ASUS, G.Skill Trident Z, TeamGroup T-Force, Patriot Viper and others.
 - **Graphics cards** — other MSI RTX 40/50 series.
 - **Cooling** on other motherboards supported by LibreHardwareMonitor.
 
@@ -84,6 +85,8 @@ The easiest way is right from the app: the **«Не работает?»** ("Not 
 Or open an [issue](../../issues/new/choose) and attach the compatibility report: **⚙ → «Сохранить отчёт совместимости»** ("Save compatibility report") — it appears on your desktop.
 
 Want your device supported? Send the report as well — it shows how the device works.
+
+Contact the author: **lumenworks.rgb@gmail.com**
 
 ## ♥ Support the project
 
